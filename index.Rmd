@@ -1,0 +1,706 @@
+--- 
+title: "R包的创建与发布"
+author: "张洪"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [book.bib, packages.bib]
+# url: your book url like https://bookdown.org/yihui/bookdown
+# cover-image: path to the social sharing image like images/cover.jpg
+description: |
+  This blog introduce how to create an R package using Rcpp or RcppArmadillo, and how to published it to GitHub.
+link-citations: yes
+github-repo: rstudio/bookdown-demo
+---
+
+
+# 前言
+
+《统计计算》课程期末大作业是创建一个R包并将其发布到GitHub上，在同学们完成大作业的过程中，碰到了各种各样的问题，这些问题涉及到创建和发布R包的方方面面，有时候要花很长的时间才能解决。为让同学们少走弯路，本文详细介绍了创建和发布R包的流程，其中反映了同学们碰到的大多数问题，希望能有效提高大家的工作效率。
+
+
+* 两点说明
+    + 如没有特别说明，本文提及代码均在Rstudio的控制台（console）中运行。
+
+    + 本文中提到的“用户水平”函数或数据指的是R用户需要直接调用的函数或使用的数据，而“非用户水平”函数或其他对象则不是用户在使用过程中直接调用的对象，比如“非用户水平”函数一般是“用户水平”函数需要调用的函数，但用户不需要直接调用。
+
+* 两点建议
+    + 在编译R包的过程中会有一些临时文件存放在用户文件夹之下，而因为某些原因，编译器会将中文字符转换成不能识别的乱码，导致编译失败。因此**<u>登录电脑的用户名不能含有中文字符</u>**。
+
+    + **<u>软件最好安装在默认路径下</u>**，该建议主要针对Windows用户。安装在默认路径下的软件会自动生成环境变量，这样安装的软件可以供其他软件使用（如R）。个别用户会将软件下载到诸如C:/Program Files这样的文件夹里，导致软件安装在这个文件夹下，但这不是系统默认的路径，导致其他软件不能正确调用。避免这个问题的一个做法是下载软件时将其存放在除了系统盘之外的分区（如D盘或E盘），安装时不要修改默认的安装路径（默认安装路径在系统盘）。
+
+# 用Rcpp创建R包的基本流程
+
+## 安装必要的软件及R包
+
+* **<u>R和Rstudio</u>** 
+  + 建议从离自己最近的cran镜像网站下载R base软件（如https://mirrors.ustc.edu.cn/CRAN/）。
+  + 创建R包可以需要用户友好的R集成开发环境Rstudio，可以从其官网下载该软件：https://posit.co/downloads/。
+
+* **<u>C++编译器</u>** 
+  + Rcpp是C/C++程序的R接口，利用Rcpp写的代码通常比纯R语言写的代码效率高很多，深受开发者的喜爱。
+  + 对于Mac用户，可以安装软件Xcode，该软件可以从苹果官网下载：https://developer.apple.com/download/all/。
+  + 对于Windows用户，需要安装跟R版本适配的Rtools。在安装好R和Rstudio的前提下，可以从cran网站下载后Rtools再安装（选择的Rtools必须与R版本相匹配），也可以运行如下代码来安装Rtools：
+```{r,eval=FALSE}
+options("repos"=c(CRAN="https://mirrors.ustc.edu.cn/CRAN/"))
+if(!is.installed('installr')) install.packages('installr')
+installr::install.Rtools()
+```
+
+* **<u>R包Rcpp、roxygen2和devtools</u>** 这几个R包都可以用常规的R包安装方法，即在Rstudio的控制台里输入如下代码：
+```{r,eval=FALSE}
+install.packages('Rcpp',dependencies = TRUE)
+install.packages('roxygen2',dependencies = TRUE)
+install.packages('devtools',dependencies = TRUE)
+```
+
+
+## 创建R包骨架（skeleton）
+
+下面用Rcpp创建一个R包的骨架（本文以R包StatComp为例），如需创建其他类型的R包只需要修改第4步，在第8节将简单介绍用RcppArmadillo创建R包的特别之处。
+
+在Rstudio菜单上操作：
+
+* 点击File。
+
+* 点击New Project...
+
+* 点击New Directory（此处可以选择R包的路径并设置R包名字，之后会创建一个跟R包同名的文件夹）。
+
+* 点击R package using Rcpp。
+
+这样就可以生成一个R包骨架：
+
+![](figures/package.png)    
+
+## 创建源文件
+
+这一步包括准备必要的R代码、C或C++代码（可选）和数据，删除一些文件，修改一些文件。
+
+1. 创建如下内容：
+
+* **<u>R函数源代码</u>** 代码放在以R为后缀的文件中，存放在文件夹R下面，其中用户水平的函数需要附加一些comments用以生成帮助文档（将在第3节中详细介绍）。
+
+* **<u>C或C++函数源代码</u>** 代码放在以c或cpp为后缀的文件中，存放在文件夹src下面，用户水平的函数需要附加一些comments用以生成帮助文档（将在第3节详细介绍）。
+
+* **<u>数据文件</u>**（可选） 数据文件以rda为后缀，需要先创建文件夹data并将数据文件放在其下，这些.rda文件需要用R函数save生成（压缩选项：compress = TRUE）。
+
+* **<u>Vignettes文件</u>**（可选） Vignettes源代码文件以Rmd为后缀，需要先创建文件夹vignettes并将这些数据文件放在其下。这些文件编译后将生成长帮助文档（将在第4节介绍）。
+
+2. 删除一些文件 
+
+* Read-and-delete-me和NAMESPACE
+
+* 文件夹man下除了StatComp-package.Rd之外的所有文件
+
+* 文件夹R下除RcppExports.R之外的所有文件
+
+* 文件夹src下除RcppExports.cpp之外的所有文件
+
+3. 修改DESCRIPTION中的Package, Title, Author, Maintainer, Description, License Imports, Suggests等，并增加如下几行：
+```python
+Linkingto: Rcpp
+RoxygenNote: 7.2.2
+Encoding: UTF-8
+```
+其中RoxygenNote后面的7.2.2是Roxygen的版本号，应改成实际安装的Roxygen的版本号。下面是R包StatComp的DESCRIPTION内容：
+```python
+Package: StatComp
+Type: Package
+Title: Example functions for 'Statistical Computing' course
+Version: 1.0
+Date: 2022-11-25
+Author: Hong Zhang
+Maintainer: Hong Zhang <325150499@qq.com>
+Description: Several R and Rcpp function are included in this package for illustration. 
+License: GPL (>= 2)
+Imports: Rcpp, microbenchmark
+Suggests: knitr, rmarkdown
+LinkingTo: Rcpp
+RoxygenNote: 7.2.2
+Encoding: UTF-8
+```
+
+4. 修改文件夹man下面的文件StatComp-package.Rd
+
+需要修改该文件如下的内容：
+
+* **<u>Title</u>**：R包的标题
+
+* **<u>description</u>**：有关R包的描述
+
+* **<u>author</u>**：R包作者的姓名
+
+* **<u>Maintainer</u>**：维护者的姓名及e-mail地址
+
+其他内容要么不需改动要么可以删除，最终StatComp-package.Rd的内容如下：
+```phython
+\name{StatComp-package}
+\alias{StatComp-package}
+\docType{package}
+\title{This package provides several functions for benchmarking }
+\description{R and Rcpp versions of gibbs sampler and vaac function are }
+\author{
+Hong Zhang
+Maintainer: Hong Zhang <325150499@qq.com>
+}
+\keyword{ package }
+```
+
+## 自动创建文档
+
+运行如下代码：
+```{r,eval=FALSE}
+devtools::document()
+```
+这会将文件.R/\*.R, ./src/\*.c, ./src/\*.cpp中的comments编译生成若干后缀为Rd的帮助文档，存于文件夹man之下。同时还会更新R/RcppExports.R和NAMESPACE。如果没有任何问题，会返回如下的信息：
+![](figures/document.png)
+如果有任何errors/warnings/notes信息，需要认真检查并纠正，确保最后运行的结果没有这些信息。
+
+## 编译R包
+
+运行如下代码编译R包：
+```{r,eval=FALSE}
+devtools::check()
+```
+这一步会彻底编译R包，需要确保不会有任何的errors/warnings/notes信息，这是保证R包可以被提交到CRAN的一个必要条件。
+
+**<u>注</u>**：为了节省编译时间，对于.R、.c或.cpp文件中运行比较耗时的示例代码（\@examples开头），   可以加[\\dontrun\{\}]()以避免编译（参看3.3节中的例1）。
+
+## 编译vignettes
+
+如果有vignettes文件，执行以下操作。
+
+* 在DESCRIPTION中加入如下两行：
+```python
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+```
+
+* 创建文件夹vignettes并将后缀为Rmd的vignettes文件放于其下。
+
+* 运行如下代码：
+```{r,eval=FALSE}
+devtools::build_vignettes()
+```
+如果运行没任何问题（0 errors, 0 warnings，0 notes），则会生成一个文件夹doc，其中包含.html文件、.R文件和.Rmd文件。
+
+* 创建文件夹inst并将文件夹（含其中文件）转移（不是拷贝）到其下。
+
+**<u>注</u>**：这一步结束后，不要再运行devtools::check()，否则重新编译后会删除文件夹inst。
+
+
+## 生成R包
+
+在生成R包之前，先删除文件夹src之下的.dll文件、.so文件和.o文件，然后运行如下代码以生成R包：
+```{r,eval=FALSE}
+devtools::build(vignettes=FALSE)
+```
+生成的R包StatComp_1.0.tar.gz将存于工作路径的父路径之下。注意此处要用选项vignettes=FALSE以节省编译vignettes的时间。该文件包含与操作系统独立的源代码，在任何操作系统上均可以安装。
+
+## 2.7 安装R包
+
+运行如下代码可以安装刚生成的R包：
+```{r,eval=FALSE}
+install.packages('../StatComp_1.0.tar.gz',repo=NULL)
+```
+
+
+# R包的comments
+
+## 概览
+
+.R或.c或.cpp文件中comments用来产生帮助文档及NAMESPACE。我们先了解comments很粗略的信息，以对其有一个初步的印象，后面将详细阐述。
+
+**<u>输入内容</u>** 
+
+* .R文件中的每一行comment以[\coloe{blue}#']()开头，后面需要加一个空格。
+
+* .c或.cpp文件中的每一行comment以[\coloe{blue}//']()开头，后面需要加一个空格。
+
+**<u>输出结果</u>** 
+
+* .Rd帮助文档：每个.Rd文件中包含如下comments对应的内容：\@title, \@name, \@description, \@param, \@return, \@examples, \@export。
+
+* NAMESPACE文件：包含如下comments对应的内容：\@import, \@importFrom, \@useDynLib，\@export。
+
+
+## 关于comments的一些重要说明
+
+* 可以将所有的R函数存在单个.R文件中，将所有的C函数存在单个.c文件中，将所有的C++函数存在单个.cpp文件中；如果某一类函数众多，也可以将其再分门别类放在不同的文件中。
+
+* 对于任何用户水平的R或C或C++函数，必须在函数上方有comments（其中一定包括\@export）以生成帮助文档。
+
+* 对于非用户水平的R/C/C++函数，不要加任何comments。
+
+* 对于任何文件夹data之下的.rda文件，作为用户水平的对象，也需要有comments（含\@export）。这些comments可以放在任一个.R或.c或.cpp文件中。
+
+* 不是函数的comments，不要用\@export，且在comments结尾处需要加“NULL”，如NAMESPACE就不是某个函数的说明文档。
+
+下面给出6个典型的comments例子。
+
+## 一些典型例子
+
+
+<font size="4">**<u>\large 例1：用户水平R函数</u>**</font>
+
+R函数gibbsR是一个用户水平函数，下面是相应的comments：
+```python
+  #' @title A Gibbs sampler using R
+  #' @description A Gibbs sampler using R
+  #' @param N the number of samples
+  #' @param thin the number of between-sample random numbers
+  #' @return a random sample of size \code{n}
+  #' @examples
+  #' \dontrun{
+  #'     rnR <- gibbsR(100,10)
+  #'     par(mfrow=c(2,1));
+  #'     plot(rnR[,1],type='l')
+  #'     plot(rnR[,2],type='l')
+  #' }
+  #' @export
+  gibbsR <- function(N, thin){...}
+```
+输出结果为.man/gibbsR.Rd：
+```python
+% Generated by roxygen2: do not edit by hand
+% Please edit documentation in R/StatCompR.R
+\name{gibbsR}
+\alias{gibbsR}
+\title{A Gibbs sampler using R}
+\usage{
+gibbsR(N, thin)
+}
+\arguments{
+\item{N}{the number of samples}
+
+\item{thin}{the number of between-sample random numbers}
+}
+\value{
+a random sample of size \code{n}
+}
+\description{
+A Gibbs sampler using R
+}
+\examples{
+\dontrun{
+rnR <- gibbsR(100,10)
+par(mfrow=c(2,1));
+plot(rnR[,1],type='l')
+plot(rnR[,2],type='l')
+}
+}
+```
+关于这个例子的一些注记：
+
+*  Comments都放在函数的上方，每一行comment以[\//']()开头，后面加一个空格。
+
+*  本例中的R函数是用户水平函数，comments的最后一行（函数紧跟其后）一定是\@export。
+
+*  函数的标题放在\@title之后。
+
+*  函数的描述放在\@description之后。
+
+*  函数的输入参数放在\@para之后，每一个参数一行。本例有两个输入参数，分别为*N*和*thin*。
+
+*  函数的返回值描述放在\@return之后。
+
+*  用以说明函数的示例代码放在\@examples之下。（可选）
+
+*  如果不想在编译时运行示例代码，可以加[\\dontrun\{\}]()，当然需要保证这些示例代码能正常运行。
+
+<font size="4">**<u>例2：用户水平C++函数</u>**</font>
+
+下面是C++函数gibbsC的comments：
+```python
+#include <Rcpp.h>
+using namespace Rcpp;
+//' @title A Gibbs sampler using Rcpp
+//' @description A Gibbs sampler using Rcpp
+//' @param N the number of samples
+//' @param thin the number of between-sample random numbers
+//' @return a random sample of size \code{n}
+//' @examples
+//' \dontrun{
+//' rnC <- gibbsC(100,10)
+//' par(mfrow=c(2,1));
+//' plot(rnC[,1],type='l')
+//' plot(rnC[,2],type='l')
+//' }
+//' @export
+// [[Rcpp::export]]
+NumericMatrix gibbsC(int N, int thin) {...}
+```
+输出结果为.man/gibbsC.Rd：
+```python
+% Generated by roxygen2: do not edit by hand
+% Please edit documentation in R/RcppExports.R
+\name{gibbsC}
+\alias{gibbsC}
+\title{A Gibbs sampler using Rcpp}
+\usage{
+gibbsC(N, thin)
+}
+\arguments{
+\item{N}{the number of samples}
+
+\item{thin}{the number of between-sample random numbers}
+}
+\value{
+a random sample of size \code{n}
+}
+\description{
+A Gibbs sampler using Rcpp
+}
+\examples{
+\dontrun{
+rnC <- gibbsC(100,10)
+par(mfrow=c(2,1));
+plot(rnC[,1],type='l')
+plot(rnC[,2],type='l')
+}
+}
+```
+关于这个例子的一些注记：
+
+*  需要在.cpp文件开头加上如下两行： 
+```python
+#include <Rcpp.h>
+using namespace Rcpp;
+```
+* 每个用户水平的C++函数之前需要加如下一行comment（在\@export下面，函数紧跟其后）：
+```python
+// [[Rcpp::export]]
+```
+
+* 其他跟R函数的comments一样。
+
+<font size="4">**<u>例3：非用户水平C++函数</u>**</font>
+
+所有的非用户水平函数都不需要加任何comments，例如下面的C++函数vacc3a就没有comments：
+```python
+double vacc3a(double age, bool female, bool ily){
+  double p = 0.25 + 0.3 * 1 / (1 - exp(0.04 * age)) + 0.1 * ily;
+  p = p * (female ? 1.25 : 0.75);
+  p = std::max(p, 0.0);
+  p = std::min(p, 1.0);
+  return p;
+}
+```
+
+<font size="4">**<u>例4：数据文件</u>**</font>
+
+因为数据文件是用户水平的，需要加comments以生成帮助文档。由于数据不是函数，其comments以NULL结尾。下面是数据文件.data/data.rda的comments：
+```python
+#' @title A dataset used for illustration.
+#' @name data
+#' @description This dataset is used to compare the performance of C function \code{vaccR}) and C++ function \code{vaccC}.
+#' @examples
+#' \dontrun{
+#' data(data)
+#' attach(data)
+#' tm <- microbenchmark::microbenchmark(
+#'   vR = vaccR(age,female,ily),
+#'   vC = vaccC(age,female,ily)
+#' )
+#' print(summary(tm)[,c(1,3,5,6)])
+#' }
+NULL
+```
+输出结果为.man/data.Rd：
+```python
+% Generated by roxygen2: do not edit by hand
+% Please edit documentation in R/StatCompR.R
+\name{data}
+\alias{data}
+\title{A dataset used for illustration.}
+\description{
+This dataset is used to compare the performance of C function \code{vaccR}) and C++ function \code{vaccC}.
+}
+\examples{
+\dontrun{
+data(data)
+attach(data)
+tm <- microbenchmark::microbenchmark(
+  vR = vaccR(age,female,ily),
+  vC = vaccC(age,female,ily)
+)
+print(summary(tm)[,c(1,3,5,6)])
+}
+}
+```
+
+<font size="4">**<u>例5：NAMESPACE</u>**</font>
+
+以下代码用来申明用到的外部R包和函数以及动态链接库：
+```python
+#' @import microbenchmark
+#' @importFrom Rcpp evalCpp
+#' @importFrom stats rnorm rgamma
+#' @useDynLib StatComp
+NULL
+```
+输出结果在NAMESPACE里（其中还包含用户水平R或C或C++函数）：
+```python
+# Generated by roxygen2: do not edit by hand
+
+export(gibbsC)
+export(gibbsR)
+export(vaccC)
+export(vaccR)
+import(microbenchmark)
+importFrom(Rcpp,evalCpp)
+importFrom(stats,rgamma)
+importFrom(stats,rnorm)
+useDynLib(StatComp)
+```
+NAMESPACE的功能是申明要创建的R包用到的其他R包（microbenchmark）和函数（例如StatComp用到函数evalCpp\{Rcpp\}、rnorm\{rnorm\}、rgamma\{stats\}），以及C或C++函数中需要用到的动态链接库。跟数据文件的comments一样，因为不是函数的comments，该段comments以NULL结尾。
+
+关于生成NAMESPACE的comments的一些注记：
+
+* 如果R包[R-package]()（如StatComp）包含C/C++函数，则需要加如下一行：
+```python  
+@useDynLib R-package
+```
+
+* 所有用到的已有R包均需要在NAMESPACE和DESCRIPTION中同时申明。
+    + 例如需要用到R包R-package1（用\@import）和函数function1\{R-package2\}与function2\{R-package2\}（用\@importFrom），则在.R或.c或.cpp文件中做如下申明（一个R包一行）：
+```python
+@import R-package1
+@importFrom R-Package2 function1 function2 ...
+```
+    + 需要用到的R包R-package1同时要在DESCRIPTION中申明：
+```python
+Imports: R-Package1 ...
+```
+
+* 关于DESCRIPTION的进一步说明：
+    + 不要指定R包的版本，否则会限制安装R包的用户（其R版本不能低于指定的版本）。
+    
+    + 不要在多个地方申明R包 (Depends, Imports, Suggest, Enhences)。
+
+<font size="4">**<u>例6：纯comments</u>**</font>
+
+有时候希望有一个帮助文档，仅仅用于比较不同函数，因为这样的comments不是针对特定的用户水平函数，所以相应comments以NULL结尾。例如，下面的comments用于两个函数（分别用R代码和C++代码实现Gibbs采样法）的表现（comments输出结果为[./man/benchmarks.Rd]()）：
+```python
+#' @title Benchmark R and Rcpp functions.
+#' @name benchmarks
+#' @description Use R package \code{microbenchmark} to compare the performance of C functions (\code{gibbsR} and \code{vaccR}) and Cpp functions (\code{gibbsC} and \code{vaccC}).
+#' @examples
+#' \dontrun{
+#'     data(data); attach(data)
+#'     tm1 <- microbenchmark::microbenchmark(
+#'       rnR = gibbsR(100,10),
+#' ...
+#' }
+NULL
+```
+
+# Vignettes的编写
+
+Vignettes文件的后缀为Rmd，其主体内容跟普通的Rmarkdown文件基本一样。但有两个不同的地方：
+
+* Vignettes文件开头的部分（以“\-\-\-”开头和结尾）形如
+```python
+---
+title: "Introduction to R-package"
+author: "First-Name Last-Name"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to R-package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```
+编写自己的R包时，只需要修改[title](), [author]()和[VignetteIndexEntry]()部分。
+
+* Vignettes跟普通的Rmarkdown不同的地方还体现在如下几方面：
+
+    + 所有vignettes中用到的其他R包或其中的函数必须在.R或.c或.cpp文件中通过comments申明（R包：\@import；R包中函数：\@importFrom）。
+
+  + 欲创建的R包（如本文中的示例R包StatComp）及其中用户水平R函数可以直接在vignettes中调用而无需申明（如申明会报错）。
+
+  + 不要用read.table等函数读取外部数据，要用R函数[save]()将外部数据存储在文件夹data之下，在vignettes中用函数[data]()载入。
+
+  + 不要读取现成的外部图片，应该用R包中的数据生成图片。
+
+# 随时编辑R包
+
+* 只需要鼠标双击后缀为Rproj的文件（如StatComp.Rproj）即可以启动R包的Rstudio编辑界面，可重复前面的编辑步骤。
+
+* 需要保证最终版本的R包没有任何的Errors/Warnings/Notes。
+
+
+# 发布R包到GitHub
+
+## R包的常用发布平台
+
+下面是常用的可用于发布R包的公共平台：
+
+* [GitHub](https://github.com/) 该平台发布的内容不仅限于R包，还包括其他任何代码。GitHub的管理对开发者较为友好，对于R包内容不会进行任何审核，因此需要开发者自己确保所上传的R包可用。
+
+* [CRAN](https://mirrors.ustc.edu.cn/CRAN/) CRAN是Comprehensive R Archive Network的缩写，截止到2022年12月12日，管理着18910个R包，其中R包都经过非常严格的测试，因此深受使用者信任，但对于开发者的要求也是最苛刻的（提交网址：https://cran.r-project.org/submit.html）。
+
+* [Bioconductor](http://www.bioconductor.org/) Bioconductor是专门用于管理生物信息学R包的平台，截止到2022年12月12日，管理着2183个R包，其提交网址为https://contributions.bioconductor.org/submission-overview.html。
+
+* [R-Forge](https://r-forge.r-project.org/) 截止到2022年12月12日，R-Forge管理着2146个项目，其网址是https://r-forge.r-project.org/register/。
+
+* ...
+
+
+下面仅介绍如何将R包发布到GitHub。
+
+## 发布R包到GitHub的流程
+
+下面给出将R包发布到GitHub的流程，细节可参看这个网页：[https://r-pkgs.had.co.nz/git.html](https://r-pkgs.had.co.nz/git.html)。
+
+* 安装与配置git
+    + 首先需要安装软件git，该软件可从[https://git-scm.com/downloads](https://r-pkgs.had.co.nz/git.html)下载。
+    + 打开R包项目（鼠标双击.Rproj文件）。
+    + 点击Rstudio的菜单[Tools]()，接着点击[Project Options...]()，在弹出的窗口左侧点击[Git/SVN]()，如此时弹出的[Version control system]()右侧小窗口显示为[(NONE)]()则将其改为[Git]()，点击[OK]()就配置好了Git，此时Rstudio右上边的菜单里会有一个选项[Git]()。
+
+* 在GihHub上创建账户和令牌
+    + 打开GitHub的登录界面[https://github.com/]()，创建一个账户（需要有相应的e-mail地址）。如本文示例中创建的用户名是[zhanghustc]()，相应的e-mail地址为[325150499@qq.com]()。
+    + 自从2021年开始，向GitHub提交R包需要一个令牌（token），浏览网页[https://blog.csdn.net/qq_40226073/article/details/119801341]()可查看创建令牌的详细过程。创建好令牌后，强烈建议将其保存在一个安全的地方（GitHub网站上查询不到创建的令牌）！
+    + 创建一个新的仓库（repository，即R包名），本文示例用的仓库名为[StatComp]()。注意创建好仓库后[\color{red}不要添加任何内容（含readme）]()，否则在上传R包时会有障碍！
+
+* 在DESCRIPTION添加两行内容：
+```python
+URL: http://github.com/username/R-package
+BugReports: http://github.com/username/R-package/issues
+```
+需要将上面的username（2处）和R-package（2处）改成实际的用户名和仓库名。
+    
+* 忽略掉一些冗余文件
+
+R包一旦创建好之后，会产生一些冗余文件，这些文件在GitHub上是不允许存在的，因此需要删除掉。常见的冗余文件包括：文件夹Meta；文件夹src下面的.o、.so和.dll文件；文件夹doc；隐藏文件.Rproj.user和.DS_Store。
+在文件[.gitignore]()中输入想要忽略的文件和文件夹，例如[.gitignore]()可包含如下内容：
+```python
+doc
+Meta
+.Rproj.user
+src/*.o
+src/*.so
+src/*.dll
+.DS_Store # macOS Files
+```
+
+* 将R包上传到GitHub上
+    + 点击RStudio右上边菜单[Git]()，接着点击蓝色的⚙️，再点击弹出的菜单中的[Shell...]()，在弹出的终端中输入如下脚本：
+```python
+git init # 初始化
+git add * # 添加本地文件夹和文件
+git commit -m "first commit" # 添加一个注释
+git config --global user.name "username" # 指定用户名
+git config --global user.email "e-mail-address" # 指定e-mail地址
+git branch -M master  # 默认将R包上传到仓库的分支master下
+git remote add origin https://token@github.com/username/R-package.git # 指定GitHub上的仓库及令牌 (“token”需要更换成生成的token，这是一个比较长的字符串)
+git push -u origin master # 将本地仓库推送到GitHub
+```
+注意需要将上面的username（2处）、R-package（1处）、e-mailaddress（1处）和token（1处）改成实际的用户名、仓库名、e-mail地址和令牌。
+
+* 更新GitHub上仓库内容
+
+可以随时更新GitHub上的仓库内容，比如要添加文件夹FOLD和文件FILE（允许添加任意多个），则可以在终端中输入如下脚本：
+```python
+git add FOLD FILE # 添加文件FOLD和文件FILE
+git commit -m "renew something" # 添加一个注释
+git push -u origin master # 同步到GitHub上
+```
+
+* 删除GitHub上仓库内容
+
+例如想要删除掉GitHub上仓库里的文件/文件夹“filename”，只需要在终端中输入如下脚本：
+```python
+git pull origin master # 先将GitHub上的仓库拖到本地
+ll # 浏览文件清单 
+git rm --cached filename # 删除文件/文件夹“filename”
+git commit -m "delete filename" # 添加一个注释
+git push -u origin master # 同步到GitHub上
+```
+
+如上传（或许有更新和删除）到GitHub上仓库StatComp的内容显示结果如下：
+![](figures/github.png)
+
+* 在本地R上安装GitHub上的R包
+
+一旦将R包上传到GitHub上后，可以用R包devtools里的函数install_github安装，安装时可以选择编译vignettes，也可以不编译vignettes。
+
+    （1）编译vignettes（可能比较耗时）
+```{r,eval=FALSE}
+devtools::install_github("username/R-package", build_vignettes = TRUE, force=T)
+```
+    （2）不编译vignettes（节省时间）
+```{r,eval=FALSE}
+devtools::install_github("username/R-package")
+```
+上述username和R-package应改成实际的用户名和R包名。
+
+**<u>注</u>**：建议编译好vignettes后再上传至GihHub，这样使用者只需要采用默认的安装方式，可以有效节省安装R包的时间。
+
+
+# 用Rcpp创建R包+发布的完整流程
+
+* 第0步：安装C及C++编译器Rtools或Xcode以及R包roxygen2，可以通过安装R包StatComp来测试安装是否成功（安装时强制要求编译vignettes）：
+```{r,eval=FALSE}
+devtools::install_github("zhanghustc/StatComp",build_vignettes = TRUE, force=T)
+```
+    
+* 第1步：准备函数和文档
+
+    + 将写好的R函数存放在单个.R文件中，将C/C++函数存放在单个.cpp文件中，确保运行它们没任何问题。
+    + 准备数据（含vignettes中需要用到的数据），并用R函数save将其保存成.rda文件（使用压缩选项compress=TRUE）。（可选）
+    + 为用户水平函数写comments（放在函数上方）。
+    + 写vignettes文件。（可选）
+
+* 第2步：创建和编译R包
+    + 创建一个新的项目（R包骨架）
+    + 删除一些文件（./Read-and-delete-me,...）。
+    + 修改DESCRIPTION和./man/Rpackage-package.Rd（Rpackage改成实际的R包名字）。
+    + 将R文件保存在文件夹./R下，将C/C++文件保存在文件夹./scr下。
+    + 将压缩过的数据文件保存在文件夹./data下。（可选）
+    + 生成用户水平函数的帮助文档、数据文件的帮助文档、其他帮助文档、NAMESPACE（[devtools::check()]()），确保0 errors, 0 warnings, 0 notes。
+    + 编译R包（[devtools::check()]()），确保0 errors, 0 warnings, 0 notes。
+    + 生成vignettes（[devtools::build_vignettes()]() ），确保0 errors, 0 warnings, 0 notes，创建文件夹inst并将文件夹doc移到其下。（可选）
+    + 生成R包压缩文件（[devtools::build(vignettes=FALSE)]()）。
+    + 安装R包。
+
+* 第3步：发布R包
+    + 在GitHub上创建账户、令牌、仓库。 
+    + 安装并设置Git。
+    + 将R包上传到GitHub（可随时更新）。
+    + 通过安装确认上传的R包没问题。
+
+# 用RcppArmadillo创建R包
+
+RcppArmadillo是C++线代运算库Armadillo的R接口，其计算效率比R的线形计算效率明显更高。用创建RcppArmadillo创建R包的过程跟用Rcpp创建R包的过程大致相同，其不同之处体现在如下几点：
+
+* 需要额外安装R包RcppArmadillo。
+
+* 在2.1节生成R包框架的第4步中点击R package using Rcpp。
+
+* 在DESCRIPTION的Imports和LinkingTo中需要添加RcppArmadillo
+```python
+Imports: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo
+```
+
+* 在文件夹src下面会多出两个文件：Makevars和Makevars.win，但是不需要修改它。
+
+* 在每一个.cpp文件的开头添加如下几行：
+```python
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::plugins(cpp11)]]
+#include <RcppArmadillo.h>
+```
+
+* 在生成NAMESPACE的comments中需要额外\@importRcppArmadilloa：
+```python
+//' @import microbenchmark
+//' @import Rcpp
+//' @import RcppArmadillo
+//' @importFrom stats rnorm rgamma
+//' @useDynLib StatComp
+NULL
+```

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 3 R包的comments | R包的创建与发布</title>
+  <meta name="description" content="This blog introduce how to create an R package using Rcpp or RcppArmadillo, and how to published it to GitHub." />
+  <meta name="generator" content="bookdown 0.30 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 3 R包的comments | R包的创建与发布" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="This blog introduce how to create an R package using Rcpp or RcppArmadillo, and how to published it to GitHub." />
+  <meta name="github-repo" content="rstudio/bookdown-demo" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 3 R包的comments | R包的创建与发布" />
+  
+  <meta name="twitter:description" content="This blog introduce how to create an R package using Rcpp or RcppArmadillo, and how to published it to GitHub." />
+  
+
+<meta name="author" content="张洪" />
+
+
+<meta name="date" content="2022-12-13" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="用rcpp创建r包的基本流程.html"/>
+<link rel="next" href="vignettes的编写.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Creating and publishing an R package</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> 前言</a></li>
+<li class="chapter" data-level="2" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html"><i class="fa fa-check"></i><b>2</b> 用Rcpp创建R包的基本流程</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#安装必要的软件及r包"><i class="fa fa-check"></i><b>2.1</b> 安装必要的软件及R包</a></li>
+<li class="chapter" data-level="2.2" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#创建r包骨架skeleton"><i class="fa fa-check"></i><b>2.2</b> 创建R包骨架（skeleton）</a></li>
+<li class="chapter" data-level="2.3" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#创建源文件"><i class="fa fa-check"></i><b>2.3</b> 创建源文件</a></li>
+<li class="chapter" data-level="2.4" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#自动创建文档"><i class="fa fa-check"></i><b>2.4</b> 自动创建文档</a></li>
+<li class="chapter" data-level="2.5" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#编译r包"><i class="fa fa-check"></i><b>2.5</b> 编译R包</a></li>
+<li class="chapter" data-level="2.6" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#编译vignettes"><i class="fa fa-check"></i><b>2.6</b> 编译vignettes</a></li>
+<li class="chapter" data-level="2.7" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#生成r包"><i class="fa fa-check"></i><b>2.7</b> 生成R包</a></li>
+<li class="chapter" data-level="2.8" data-path="用rcpp创建r包的基本流程.html"><a href="用rcpp创建r包的基本流程.html#安装r包"><i class="fa fa-check"></i><b>2.8</b> 2.7 安装R包</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="r包的comments.html"><a href="r包的comments.html"><i class="fa fa-check"></i><b>3</b> R包的comments</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="r包的comments.html"><a href="r包的comments.html#概览"><i class="fa fa-check"></i><b>3.1</b> 概览</a></li>
+<li class="chapter" data-level="3.2" data-path="r包的comments.html"><a href="r包的comments.html#关于comments的一些重要说明"><i class="fa fa-check"></i><b>3.2</b> 关于comments的一些重要说明</a></li>
+<li class="chapter" data-level="3.3" data-path="r包的comments.html"><a href="r包的comments.html#一些典型例子"><i class="fa fa-check"></i><b>3.3</b> 一些典型例子</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="vignettes的编写.html"><a href="vignettes的编写.html"><i class="fa fa-check"></i><b>4</b> Vignettes的编写</a></li>
+<li class="chapter" data-level="5" data-path="随时编辑r包.html"><a href="随时编辑r包.html"><i class="fa fa-check"></i><b>5</b> 随时编辑R包</a></li>
+<li class="chapter" data-level="6" data-path="发布r包到github.html"><a href="发布r包到github.html"><i class="fa fa-check"></i><b>6</b> 发布R包到GitHub</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="发布r包到github.html"><a href="发布r包到github.html#r包的常用发布平台"><i class="fa fa-check"></i><b>6.1</b> R包的常用发布平台</a></li>
+<li class="chapter" data-level="6.2" data-path="发布r包到github.html"><a href="发布r包到github.html#发布r包到github的流程"><i class="fa fa-check"></i><b>6.2</b> 发布R包到GitHub的流程</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="用rcpp创建r包发布的完整流程.html"><a href="用rcpp创建r包发布的完整流程.html"><i class="fa fa-check"></i><b>7</b> 用Rcpp创建R包+发布的完整流程</a></li>
+<li class="chapter" data-level="8" data-path="用rcpparmadillo创建r包.html"><a href="用rcpparmadillo创建r包.html"><i class="fa fa-check"></i><b>8</b> 用RcppArmadillo创建R包</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/zhanghustc/Rpackage" target="blank">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">R包的创建与发布</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="r包的comments" class="section level1 hasAnchor" number="3">
+<h1><span class="header-section-number">Chapter 3</span> R包的comments<a href="r包的comments.html#r包的comments" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="概览" class="section level2 hasAnchor" number="3.1">
+<h2><span class="header-section-number">3.1</span> 概览<a href="r包的comments.html#概览" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>.R或.c或.cpp文件中comments用来产生帮助文档及NAMESPACE。我们先了解comments很粗略的信息，以对其有一个初步的印象，后面将详细阐述。</p>
+<p><strong><u>输入内容</u></strong></p>
+<ul>
+<li><p>.R文件中的每一行comment以<a href="">#’</a>开头，后面需要加一个空格。</p></li>
+<li><p>.c或.cpp文件中的每一行comment以<a href="">//’</a>开头，后面需要加一个空格。</p></li>
+</ul>
+<p><strong><u>输出结果</u></strong></p>
+<ul>
+<li><p>.Rd帮助文档：每个.Rd文件中包含如下comments对应的内容：@title, @name, @description, @param, @return, @examples, @export。</p></li>
+<li><p>NAMESPACE文件：包含如下comments对应的内容：@import, @importFrom, @useDynLib，@export。</p></li>
+</ul>
+</div>
+<div id="关于comments的一些重要说明" class="section level2 hasAnchor" number="3.2">
+<h2><span class="header-section-number">3.2</span> 关于comments的一些重要说明<a href="r包的comments.html#关于comments的一些重要说明" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<ul>
+<li><p>可以将所有的R函数存在单个.R文件中，将所有的C函数存在单个.c文件中，将所有的C++函数存在单个.cpp文件中；如果某一类函数众多，也可以将其再分门别类放在不同的文件中。</p></li>
+<li><p>对于任何用户水平的R或C或C++函数，必须在函数上方有comments（其中一定包括@export）以生成帮助文档。</p></li>
+<li><p>对于非用户水平的R/C/C++函数，不要加任何comments。</p></li>
+<li><p>对于任何文件夹data之下的.rda文件，作为用户水平的对象，也需要有comments（含@export）。这些comments可以放在任一个.R或.c或.cpp文件中。</p></li>
+<li><p>不是函数的comments，不要用@export，且在comments结尾处需要加“NULL”，如NAMESPACE就不是某个函数的说明文档。</p></li>
+</ul>
+<p>下面给出6个典型的comments例子。</p>
+</div>
+<div id="一些典型例子" class="section level2 hasAnchor" number="3.3">
+<h2><span class="header-section-number">3.3</span> 一些典型例子<a href="r包的comments.html#一些典型例子" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p><font size="4"><strong><u>例1：用户水平R函数</u></strong></font></p>
+<p>R函数gibbsR是一个用户水平函数，下面是相应的comments：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="r包的comments.html#cb12-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @title A Gibbs sampler using R</span></span>
+<span id="cb12-2"><a href="r包的comments.html#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @description A Gibbs sampler using R</span></span>
+<span id="cb12-3"><a href="r包的comments.html#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @param N the number of samples</span></span>
+<span id="cb12-4"><a href="r包的comments.html#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @param thin the number of between-sample random numbers</span></span>
+<span id="cb12-5"><a href="r包的comments.html#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @return a random sample of size \code{n}</span></span>
+<span id="cb12-6"><a href="r包的comments.html#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @examples</span></span>
+<span id="cb12-7"><a href="r包的comments.html#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; \dontrun{</span></span>
+<span id="cb12-8"><a href="r包的comments.html#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39;     rnR &lt;- gibbsR(100,10)</span></span>
+<span id="cb12-9"><a href="r包的comments.html#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39;     par(mfrow=c(2,1));</span></span>
+<span id="cb12-10"><a href="r包的comments.html#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39;     plot(rnR[,1],type=&#39;l&#39;)</span></span>
+<span id="cb12-11"><a href="r包的comments.html#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39;     plot(rnR[,2],type=&#39;l&#39;)</span></span>
+<span id="cb12-12"><a href="r包的comments.html#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; }</span></span>
+<span id="cb12-13"><a href="r包的comments.html#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">#&#39; @export</span></span>
+<span id="cb12-14"><a href="r包的comments.html#cb12-14" aria-hidden="true" tabindex="-1"></a>  gibbsR <span class="op">&lt;-</span> function(N, thin){...}</span></code></pre></div>
+<p>输出结果为.man/gibbsR.Rd：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="r包的comments.html#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span> Generated by roxygen2: do <span class="kw">not</span> edit by hand</span>
+<span id="cb13-2"><a href="r包的comments.html#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span> Please edit documentation <span class="kw">in</span> R<span class="op">/</span>StatCompR.R</span>
+<span id="cb13-3"><a href="r包的comments.html#cb13-3" aria-hidden="true" tabindex="-1"></a>\name{gibbsR}</span>
+<span id="cb13-4"><a href="r包的comments.html#cb13-4" aria-hidden="true" tabindex="-1"></a>\alias{gibbsR}</span>
+<span id="cb13-5"><a href="r包的comments.html#cb13-5" aria-hidden="true" tabindex="-1"></a>\title{A Gibbs sampler using R}</span>
+<span id="cb13-6"><a href="r包的comments.html#cb13-6" aria-hidden="true" tabindex="-1"></a>\usage{</span>
+<span id="cb13-7"><a href="r包的comments.html#cb13-7" aria-hidden="true" tabindex="-1"></a>gibbsR(N, thin)</span>
+<span id="cb13-8"><a href="r包的comments.html#cb13-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-9"><a href="r包的comments.html#cb13-9" aria-hidden="true" tabindex="-1"></a>\arguments{</span>
+<span id="cb13-10"><a href="r包的comments.html#cb13-10" aria-hidden="true" tabindex="-1"></a>\item{N}{the number of samples}</span>
+<span id="cb13-11"><a href="r包的comments.html#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="r包的comments.html#cb13-12" aria-hidden="true" tabindex="-1"></a>\item{thin}{the number of between<span class="op">-</span>sample random numbers}</span>
+<span id="cb13-13"><a href="r包的comments.html#cb13-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-14"><a href="r包的comments.html#cb13-14" aria-hidden="true" tabindex="-1"></a>\value{</span>
+<span id="cb13-15"><a href="r包的comments.html#cb13-15" aria-hidden="true" tabindex="-1"></a>a random sample of size \code{n}</span>
+<span id="cb13-16"><a href="r包的comments.html#cb13-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-17"><a href="r包的comments.html#cb13-17" aria-hidden="true" tabindex="-1"></a>\description{</span>
+<span id="cb13-18"><a href="r包的comments.html#cb13-18" aria-hidden="true" tabindex="-1"></a>A Gibbs sampler using R</span>
+<span id="cb13-19"><a href="r包的comments.html#cb13-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-20"><a href="r包的comments.html#cb13-20" aria-hidden="true" tabindex="-1"></a>\examples{</span>
+<span id="cb13-21"><a href="r包的comments.html#cb13-21" aria-hidden="true" tabindex="-1"></a>\dontrun{</span>
+<span id="cb13-22"><a href="r包的comments.html#cb13-22" aria-hidden="true" tabindex="-1"></a>rnR <span class="op">&lt;-</span> gibbsR(<span class="dv">100</span>,<span class="dv">10</span>)</span>
+<span id="cb13-23"><a href="r包的comments.html#cb13-23" aria-hidden="true" tabindex="-1"></a>par(mfrow<span class="op">=</span>c(<span class="dv">2</span>,<span class="dv">1</span>))<span class="op">;</span></span>
+<span id="cb13-24"><a href="r包的comments.html#cb13-24" aria-hidden="true" tabindex="-1"></a>plot(rnR[,<span class="dv">1</span>],<span class="bu">type</span><span class="op">=</span><span class="st">&#39;l&#39;</span>)</span>
+<span id="cb13-25"><a href="r包的comments.html#cb13-25" aria-hidden="true" tabindex="-1"></a>plot(rnR[,<span class="dv">2</span>],<span class="bu">type</span><span class="op">=</span><span class="st">&#39;l&#39;</span>)</span>
+<span id="cb13-26"><a href="r包的comments.html#cb13-26" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-27"><a href="r包的comments.html#cb13-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>关于这个例子的一些注记：</p>
+<ul>
+<li><p>Comments都放在函数的上方，每一行comment以<a href="">//’</a>开头，后面加一个空格。</p></li>
+<li><p>本例中的R函数是用户水平函数，comments的最后一行（函数紧跟其后）一定是@export。</p></li>
+<li><p>函数的标题放在@title之后。</p></li>
+<li><p>函数的描述放在@description之后。</p></li>
+<li><p>函数的输入参数放在@para之后，每一个参数一行。本例有两个输入参数，分别为<em>N</em>和<em>thin</em>。</p></li>
+<li><p>函数的返回值描述放在@return之后。</p></li>
+<li><p>用以说明函数的示例代码放在@examples之下。（可选）</p></li>
+<li><p>如果不想在编译时运行示例代码，可以加<a href="">\dontrun{}</a>，当然需要保证这些示例代码能正常运行。</p></li>
+</ul>
+<p><font size="4"><strong><u>例2：用户水平C++函数</u></strong></font></p>
+<p>下面是C++函数gibbsC的comments：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="r包的comments.html#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#include &lt;Rcpp.h&gt;</span></span>
+<span id="cb14-2"><a href="r包的comments.html#cb14-2" aria-hidden="true" tabindex="-1"></a>using namespace Rcpp<span class="op">;</span></span>
+<span id="cb14-3"><a href="r包的comments.html#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">//</span><span class="st">&#39; @title A Gibbs sampler using Rcpp</span></span>
+<span id="cb14-4"><a href="r包的comments.html#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; @description A Gibbs sampler using Rcpp</span></span>
+<span id="cb14-5"><a href="r包的comments.html#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; @param N the number of samples</span></span>
+<span id="cb14-6"><a href="r包的comments.html#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; @param thin the number of between-sample random numbers</span></span>
+<span id="cb14-7"><a href="r包的comments.html#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; @return a random sample of size \code{n}</span></span>
+<span id="cb14-8"><a href="r包的comments.html#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; @examples</span></span>
+<span id="cb14-9"><a href="r包的comments.html#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; \dontrun{</span></span>
+<span id="cb14-10"><a href="r包的comments.html#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; rnC &lt;- gibbsC(100,10)</span></span>
+<span id="cb14-11"><a href="r包的comments.html#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; par(mfrow=c(2,1));</span></span>
+<span id="cb14-12"><a href="r包的comments.html#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; plot(rnC[,1],type=&#39;l&#39;)</span></span>
+<span id="cb14-13"><a href="r包的comments.html#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; plot(rnC[,2],type=&#39;l&#39;)</span></span>
+<span id="cb14-14"><a href="r包的comments.html#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; }</span></span>
+<span id="cb14-15"><a href="r包的comments.html#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="er">//&#39; @export</span></span>
+<span id="cb14-16"><a href="r包的comments.html#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="er">// [[Rcpp::export]]</span></span>
+<span id="cb14-17"><a href="r包的comments.html#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="er">NumericMatrix gibbsC(int N, int thin) {...}</span></span></code></pre></div>
+<p>输出结果为.man/gibbsC.Rd：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="r包的comments.html#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span> Generated by roxygen2: do <span class="kw">not</span> edit by hand</span>
+<span id="cb15-2"><a href="r包的comments.html#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span> Please edit documentation <span class="kw">in</span> R<span class="op">/</span>RcppExports.R</span>
+<span id="cb15-3"><a href="r包的comments.html#cb15-3" aria-hidden="true" tabindex="-1"></a>\name{gibbsC}</span>
+<span id="cb15-4"><a href="r包的comments.html#cb15-4" aria-hidden="true" tabindex="-1"></a>\alias{gibbsC}</span>
+<span id="cb15-5"><a href="r包的comments.html#cb15-5" aria-hidden="true" tabindex="-1"></a>\title{A Gibbs sampler using Rcpp}</span>
+<span id="cb15-6"><a href="r包的comments.html#cb15-6" aria-hidden="true" tabindex="-1"></a>\usage{</span>
+<span id="cb15-7"><a href="r包的comments.html#cb15-7" aria-hidden="true" tabindex="-1"></a>gibbsC(N, thin)</span>
+<span id="cb15-8"><a href="r包的comments.html#cb15-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-9"><a href="r包的comments.html#cb15-9" aria-hidden="true" tabindex="-1"></a>\arguments{</span>
+<span id="cb15-10"><a href="r包的comments.html#cb15-10" aria-hidden="true" tabindex="-1"></a>\item{N}{the number of samples}</span>
+<span id="cb15-11"><a href="r包的comments.html#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="r包的comments.html#cb15-12" aria-hidden="true" tabindex="-1"></a>\item{thin}{the number of between<span class="op">-</span>sample random numbers}</span>
+<span id="cb15-13"><a href="r包的comments.html#cb15-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-14"><a href="r包的comments.html#cb15-14" aria-hidden="true" tabindex="-1"></a>\value{</span>
+<span id="cb15-15"><a href="r包的comments.html#cb15-15" aria-hidden="true" tabindex="-1"></a>a random sample of size \code{n}</span>
+<span id="cb15-16"><a href="r包的comments.html#cb15-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-17"><a href="r包的comments.html#cb15-17" aria-hidden="true" tabindex="-1"></a>\description{</span>
+<span id="cb15-18"><a href="r包的comments.html#cb15-18" aria-hidden="true" tabindex="-1"></a>A Gibbs sampler using Rcpp</span>
+<span id="cb15-19"><a href="r包的comments.html#cb15-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-20"><a href="r包的comments.html#cb15-20" aria-hidden="true" tabindex="-1"></a>\examples{</span>
+<span id="cb15-21"><a href="r包的comments.html#cb15-21" aria-hidden="true" tabindex="-1"></a>\dontrun{</span>
+<span id="cb15-22"><a href="r包的comments.html#cb15-22" aria-hidden="true" tabindex="-1"></a>rnC <span class="op">&lt;-</span> gibbsC(<span class="dv">100</span>,<span class="dv">10</span>)</span>
+<span id="cb15-23"><a href="r包的comments.html#cb15-23" aria-hidden="true" tabindex="-1"></a>par(mfrow<span class="op">=</span>c(<span class="dv">2</span>,<span class="dv">1</span>))<span class="op">;</span></span>
+<span id="cb15-24"><a href="r包的comments.html#cb15-24" aria-hidden="true" tabindex="-1"></a>plot(rnC[,<span class="dv">1</span>],<span class="bu">type</span><span class="op">=</span><span class="st">&#39;l&#39;</span>)</span>
+<span id="cb15-25"><a href="r包的comments.html#cb15-25" aria-hidden="true" tabindex="-1"></a>plot(rnC[,<span class="dv">2</span>],<span class="bu">type</span><span class="op">=</span><span class="st">&#39;l&#39;</span>)</span>
+<span id="cb15-26"><a href="r包的comments.html#cb15-26" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-27"><a href="r包的comments.html#cb15-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>关于这个例子的一些注记：</p>
+<ul>
+<li>需要在.cpp文件开头加上如下两行：</li>
+</ul>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="r包的comments.html#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#include &lt;Rcpp.h&gt;</span></span>
+<span id="cb16-2"><a href="r包的comments.html#cb16-2" aria-hidden="true" tabindex="-1"></a>using namespace Rcpp<span class="op">;</span></span></code></pre></div>
+<ul>
+<li>每个用户水平的C++函数之前需要加如下一行comment（在@export下面，函数紧跟其后）：</li>
+</ul>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="r包的comments.html#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">//</span> [[Rcpp::export]]</span></code></pre></div>
+<ul>
+<li>其他跟R函数的comments一样。</li>
+</ul>
+<p><font size="4"><strong><u>例3：非用户水平C++函数</u></strong></font></p>
+<p>所有的非用户水平函数都不需要加任何comments，例如下面的C++函数vacc3a就没有comments：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="r包的comments.html#cb18-1" aria-hidden="true" tabindex="-1"></a>double vacc3a(double age, <span class="bu">bool</span> female, <span class="bu">bool</span> ily){</span>
+<span id="cb18-2"><a href="r包的comments.html#cb18-2" aria-hidden="true" tabindex="-1"></a>  double p <span class="op">=</span> <span class="fl">0.25</span> <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> exp(<span class="fl">0.04</span> <span class="op">*</span> age)) <span class="op">+</span> <span class="fl">0.1</span> <span class="op">*</span> ily<span class="op">;</span></span>
+<span id="cb18-3"><a href="r包的comments.html#cb18-3" aria-hidden="true" tabindex="-1"></a>  p <span class="op">=</span> p <span class="op">*</span> (female ? <span class="fl">1.25</span> : <span class="fl">0.75</span>)<span class="op">;</span></span>
+<span id="cb18-4"><a href="r包的comments.html#cb18-4" aria-hidden="true" tabindex="-1"></a>  p <span class="op">=</span> std::<span class="bu">max</span>(p, <span class="fl">0.0</span>)<span class="op">;</span></span>
+<span id="cb18-5"><a href="r包的comments.html#cb18-5" aria-hidden="true" tabindex="-1"></a>  p <span class="op">=</span> std::<span class="bu">min</span>(p, <span class="fl">1.0</span>)<span class="op">;</span></span>
+<span id="cb18-6"><a href="r包的comments.html#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> p<span class="op">;</span></span>
+<span id="cb18-7"><a href="r包的comments.html#cb18-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><font size="4"><strong><u>例4：数据文件</u></strong></font></p>
+<p>因为数据文件是用户水平的，需要加comments以生成帮助文档。由于数据不是函数，其comments以NULL结尾。下面是数据文件.data/data.rda的comments：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="r包的comments.html#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @title A dataset used for illustration.</span></span>
+<span id="cb19-2"><a href="r包的comments.html#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @name data</span></span>
+<span id="cb19-3"><a href="r包的comments.html#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @description This dataset is used to compare the performance of C function \code{vaccR}) and C++ function \code{vaccC}.</span></span>
+<span id="cb19-4"><a href="r包的comments.html#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @examples</span></span>
+<span id="cb19-5"><a href="r包的comments.html#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \dontrun{</span></span>
+<span id="cb19-6"><a href="r包的comments.html#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; data(data)</span></span>
+<span id="cb19-7"><a href="r包的comments.html#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; attach(data)</span></span>
+<span id="cb19-8"><a href="r包的comments.html#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; tm &lt;- microbenchmark::microbenchmark(</span></span>
+<span id="cb19-9"><a href="r包的comments.html#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;   vR = vaccR(age,female,ily),</span></span>
+<span id="cb19-10"><a href="r包的comments.html#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;   vC = vaccC(age,female,ily)</span></span>
+<span id="cb19-11"><a href="r包的comments.html#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; )</span></span>
+<span id="cb19-12"><a href="r包的comments.html#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; print(summary(tm)[,c(1,3,5,6)])</span></span>
+<span id="cb19-13"><a href="r包的comments.html#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; }</span></span>
+<span id="cb19-14"><a href="r包的comments.html#cb19-14" aria-hidden="true" tabindex="-1"></a>NULL</span></code></pre></div>
+<p>输出结果为.man/data.Rd：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="r包的comments.html#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span> Generated by roxygen2: do <span class="kw">not</span> edit by hand</span>
+<span id="cb20-2"><a href="r包的comments.html#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span> Please edit documentation <span class="kw">in</span> R<span class="op">/</span>StatCompR.R</span>
+<span id="cb20-3"><a href="r包的comments.html#cb20-3" aria-hidden="true" tabindex="-1"></a>\name{data}</span>
+<span id="cb20-4"><a href="r包的comments.html#cb20-4" aria-hidden="true" tabindex="-1"></a>\alias{data}</span>
+<span id="cb20-5"><a href="r包的comments.html#cb20-5" aria-hidden="true" tabindex="-1"></a>\title{A dataset used <span class="cf">for</span> illustration.}</span>
+<span id="cb20-6"><a href="r包的comments.html#cb20-6" aria-hidden="true" tabindex="-1"></a>\description{</span>
+<span id="cb20-7"><a href="r包的comments.html#cb20-7" aria-hidden="true" tabindex="-1"></a>This dataset <span class="kw">is</span> used to compare the performance of C function \code{vaccR}) <span class="kw">and</span> C<span class="op">++</span> function \code{vaccC}.</span>
+<span id="cb20-8"><a href="r包的comments.html#cb20-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-9"><a href="r包的comments.html#cb20-9" aria-hidden="true" tabindex="-1"></a>\examples{</span>
+<span id="cb20-10"><a href="r包的comments.html#cb20-10" aria-hidden="true" tabindex="-1"></a>\dontrun{</span>
+<span id="cb20-11"><a href="r包的comments.html#cb20-11" aria-hidden="true" tabindex="-1"></a>data(data)</span>
+<span id="cb20-12"><a href="r包的comments.html#cb20-12" aria-hidden="true" tabindex="-1"></a>attach(data)</span>
+<span id="cb20-13"><a href="r包的comments.html#cb20-13" aria-hidden="true" tabindex="-1"></a>tm <span class="op">&lt;-</span> microbenchmark::microbenchmark(</span>
+<span id="cb20-14"><a href="r包的comments.html#cb20-14" aria-hidden="true" tabindex="-1"></a>  vR <span class="op">=</span> vaccR(age,female,ily),</span>
+<span id="cb20-15"><a href="r包的comments.html#cb20-15" aria-hidden="true" tabindex="-1"></a>  vC <span class="op">=</span> vaccC(age,female,ily)</span>
+<span id="cb20-16"><a href="r包的comments.html#cb20-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-17"><a href="r包的comments.html#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(summary(tm)[,c(<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">6</span>)])</span>
+<span id="cb20-18"><a href="r包的comments.html#cb20-18" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-19"><a href="r包的comments.html#cb20-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><font size="4"><strong><u>例5：NAMESPACE</u></strong></font></p>
+<p>以下代码用来申明用到的外部R包和函数以及动态链接库：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="r包的comments.html#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @import microbenchmark</span></span>
+<span id="cb21-2"><a href="r包的comments.html#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @importFrom Rcpp evalCpp</span></span>
+<span id="cb21-3"><a href="r包的comments.html#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @importFrom stats rnorm rgamma</span></span>
+<span id="cb21-4"><a href="r包的comments.html#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @useDynLib StatComp</span></span>
+<span id="cb21-5"><a href="r包的comments.html#cb21-5" aria-hidden="true" tabindex="-1"></a>NULL</span></code></pre></div>
+<p>输出结果在NAMESPACE里（其中还包含用户水平R或C或C++函数）：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="r包的comments.html#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Generated by roxygen2: do not edit by hand</span></span>
+<span id="cb22-2"><a href="r包的comments.html#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="r包的comments.html#cb22-3" aria-hidden="true" tabindex="-1"></a>export(gibbsC)</span>
+<span id="cb22-4"><a href="r包的comments.html#cb22-4" aria-hidden="true" tabindex="-1"></a>export(gibbsR)</span>
+<span id="cb22-5"><a href="r包的comments.html#cb22-5" aria-hidden="true" tabindex="-1"></a>export(vaccC)</span>
+<span id="cb22-6"><a href="r包的comments.html#cb22-6" aria-hidden="true" tabindex="-1"></a>export(vaccR)</span>
+<span id="cb22-7"><a href="r包的comments.html#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span>(microbenchmark)</span>
+<span id="cb22-8"><a href="r包的comments.html#cb22-8" aria-hidden="true" tabindex="-1"></a>importFrom(Rcpp,evalCpp)</span>
+<span id="cb22-9"><a href="r包的comments.html#cb22-9" aria-hidden="true" tabindex="-1"></a>importFrom(stats,rgamma)</span>
+<span id="cb22-10"><a href="r包的comments.html#cb22-10" aria-hidden="true" tabindex="-1"></a>importFrom(stats,rnorm)</span>
+<span id="cb22-11"><a href="r包的comments.html#cb22-11" aria-hidden="true" tabindex="-1"></a>useDynLib(StatComp)</span></code></pre></div>
+<p>NAMESPACE的功能是申明要创建的R包用到的其他R包（microbenchmark）和函数（例如StatComp用到函数evalCpp{Rcpp}、rnorm{rnorm}、rgamma{stats}），以及C或C++函数中需要用到的动态链接库。跟数据文件的comments一样，因为不是函数的comments，该段comments以NULL结尾。</p>
+<p>关于生成NAMESPACE的comments的一些注记：</p>
+<ul>
+<li>如果R包<a href="">R-package</a>（如StatComp）包含C/C++函数，则需要加如下一行：</li>
+</ul>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="r包的comments.html#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="at">@useDynLib</span> R<span class="op">-</span>package</span></code></pre></div>
+<ul>
+<li>所有用到的已有R包均需要在NAMESPACE和DESCRIPTION中同时申明。
+<ul>
+<li>例如需要用到R包R-package1（用@import）和函数function1{R-package2}与function2{R-package2}（用@importFrom），则在.R或.c或.cpp文件中做如下申明（一个R包一行）：</li>
+</ul>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="r包的comments.html#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="at">@import</span> R<span class="op">-</span>package1</span>
+<span id="cb24-2"><a href="r包的comments.html#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="at">@importFrom</span> R<span class="op">-</span>Package2 function1 function2 ...</span></code></pre></div>
+<ul>
+<li>需要用到的R包R-package1同时要在DESCRIPTION中申明：</li>
+</ul>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="r包的comments.html#cb25-1" aria-hidden="true" tabindex="-1"></a>Imports: R<span class="op">-</span>Package1 ...</span></code></pre></div></li>
+<li>关于DESCRIPTION的进一步说明：
+<ul>
+<li><p>不要指定R包的版本，否则会限制安装R包的用户（其R版本不能低于指定的版本）。</p></li>
+<li><p>不要在多个地方申明R包 (Depends, Imports, Suggest, Enhences)。</p></li>
+</ul></li>
+</ul>
+<p><font size="4"><strong><u>例6：纯comments</u></strong></font></p>
+<p>有时候希望有一个帮助文档，仅仅用于比较不同函数，因为这样的comments不是针对特定的用户水平函数，所以相应comments以NULL结尾。例如，下面的comments用于两个函数（分别用R代码和C++代码实现Gibbs采样法）的表现（comments输出结果为<a href="">./man/benchmarks.Rd</a>）：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="r包的comments.html#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @title Benchmark R and Rcpp functions.</span></span>
+<span id="cb26-2"><a href="r包的comments.html#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @name benchmarks</span></span>
+<span id="cb26-3"><a href="r包的comments.html#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @description Use R package \code{microbenchmark} to compare the performance of C functions (\code{gibbsR} and \code{vaccR}) and Cpp functions (\code{gibbsC} and \code{vaccC}).</span></span>
+<span id="cb26-4"><a href="r包的comments.html#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @examples</span></span>
+<span id="cb26-5"><a href="r包的comments.html#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \dontrun{</span></span>
+<span id="cb26-6"><a href="r包的comments.html#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;     data(data); attach(data)</span></span>
+<span id="cb26-7"><a href="r包的comments.html#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;     tm1 &lt;- microbenchmark::microbenchmark(</span></span>
+<span id="cb26-8"><a href="r包的comments.html#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;       rnR = gibbsR(100,10),</span></span>
+<span id="cb26-9"><a href="r包的comments.html#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; ...</span></span>
+<span id="cb26-10"><a href="r包的comments.html#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; }</span></span>
+<span id="cb26-11"><a href="r包的comments.html#cb26-11" aria-hidden="true" tabindex="-1"></a>NULL</span></code></pre></div>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="用rcpp创建r包的基本流程.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="vignettes的编写.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/zhanghustc/Rpackage/edit/BRANCH/index.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": ["_main.pdf", "_main.epub"],
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>
